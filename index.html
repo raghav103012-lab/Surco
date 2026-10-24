@@ -9,40 +9,39 @@
 <body>
   <div id="bubbles" aria-hidden="true"></div>
   <div class="app">
-    <header class="mast">
-      <div class="mast-row">
-        <p class="brand">Surco <span>Manteca</span></p>
-        <div class="mast-actions">
-          <button id="open-lang" class="lang-open" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="lang-sheet">English</button>
-          <button id="open-account" type="button">The week</button>
-          <button id="open-chat" type="button">The message</button>
-        </div>
+  <header class="mast">
+    <div class="mast-row">
+      <p class="brand">Surco <span>Manteca</span></p>
+      <div class="mast-actions">
+        <button id="open-lang" class="lang-open" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="lang-sheet">English</button>
+        <button id="open-chat" type="button">Ask the book</button>
       </div>
-      <nav id="tabs" class="tabs" aria-label="Sections"></nav>
-    </header>
-    <section id="chat" class="chat" hidden>
-      <div class="chat-head">
-        <p id="chat-title">The message</p>
-        <div class="chat-tools">
-          <button id="voice-toggle" type="button">Hear it</button>
-          <button id="close-chat" type="button">Close</button>
-        </div>
+    </div>
+    <nav id="tabs" class="tabs" aria-label="Sections"></nav>
+  </header>
+  <section id="chat" class="chat" hidden>
+    <div class="chat-head">
+      <p>Ask the book</p>
+      <div class="chat-tools">
+        <button id="voice-toggle" type="button" aria-pressed="false">Voice</button>
+        <button id="close-chat" type="button">Close</button>
       </div>
-      <div id="voice-stage" class="voice-stage">
-        <button id="voice-mic" type="button" aria-label="Hear the message">
-          <span class="voice-ring"></span>
-          <span class="voice-ring delay"></span>
-          <span class="voice-core"></span>
-        </button>
-        <p id="voice-state"></p>
-      </div>
-      <div id="chat-log" class="chat-log"></div>
-      <form id="chat-form">
-        <button id="copy-message" type="button">Copy</button>
-        <button id="text-message" type="submit">Text it</button>
-      </form>
-    </section>
-    <main id="panel"></main>
+    </div>
+    <div id="voice-stage" class="voice-stage" hidden>
+      <button id="voice-mic" type="button" aria-pressed="false">
+        <span class="voice-ring"></span>
+        <span class="voice-ring delay"></span>
+        <span class="voice-core"></span>
+      </button>
+      <p id="voice-state"></p>
+    </div>
+    <div id="chat-log" class="chat-log"></div>
+    <form id="chat-form">
+      <input id="chat-input" type="text" placeholder="When do I pick a walnut?" autocomplete="off" />
+      <button id="chat-send" type="submit">Send</button>
+    </form>
+  </section>
+  <main id="panel"></main>
   </div>
   <div id="lang-sheet" class="lang-sheet" hidden>
     <div class="lang-veil"></div>
@@ -59,6 +58,10 @@
       <div id="langs" class="lang-grid" role="listbox" aria-label="Language"></div>
     </div>
   </div>
+  <script src="vendor/tf.min.js"></script>
+  <script src="vendor/mobilenet.min.js"></script>
+  <script src="data.js"></script>
+  <script src="i18n.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
