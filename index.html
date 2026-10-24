@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Surco</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="bubbles" aria-hidden="true"></div>
+  <div class="app">
+  <header class="mast">
+    <div class="mast-row">
+      <p class="brand">Surco <span>French Camp</span></p>
+      <div class="mast-actions">
+        <button id="open-lang" class="lang-open" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="lang-sheet">English</button>
+        <button id="open-account" type="button">Sign in</button>
+        <button id="open-chat" type="button">Ask the book</button>
+      </div>
+    </div>
+    <nav id="tabs" class="tabs" aria-label="Sections"></nav>
+  </header>
+  <section id="chat" class="chat" hidden>
+    <div class="chat-head">
+      <p>Ask the book</p>
+      <div class="chat-tools">
+        <button id="voice-toggle" type="button" aria-pressed="false">Voice</button>
+        <button id="close-chat" type="button">Close</button>
+      </div>
+    </div>
+    <div id="voice-stage" class="voice-stage" hidden>
+      <button id="voice-mic" type="button" aria-pressed="false">
+        <span class="voice-ring"></span>
+        <span class="voice-ring delay"></span>
+        <span class="voice-core"></span>
+      </button>
+      <p id="voice-state"></p>
+    </div>
+    <div id="chat-log" class="chat-log"></div>
+    <form id="chat-form">
+      <input id="chat-input" type="text" placeholder="When do I pick a walnut?" autocomplete="off" />
+      <button id="chat-send" type="submit">Send</button>
+    </form>
+  </section>
+  <main id="panel"></main>
+  </div>
+  <div id="lang-sheet" class="lang-sheet" hidden>
+    <div class="lang-veil"></div>
+    <div class="lang-stage" role="dialog" aria-modal="true" aria-labelledby="lang-title">
+      <div class="lang-float" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
+      <div class="lang-head">
+        <div>
+          <p class="lang-kicker">French Camp</p>
+          <h2 id="lang-title">Language</h2>
+          <p id="lang-note" class="lang-note"></p>
+        </div>
+        <button id="close-lang" type="button">Close</button>
+      </div>
+      <div id="langs" class="lang-grid" role="listbox" aria-label="Language"></div>
+    </div>
+  </div>
+  <script src="vendor/tf.min.js"></script>
+  <script src="vendor/mobilenet.min.js"></script>
+  <div id="account-sheet" class="account-sheet" hidden>
+    <div class="account-veil"></div>
+    <div class="account-card" role="dialog" aria-modal="true" aria-labelledby="account-title">
+      <div class="account-head">
+        <div>
+          <p class="lang-kicker">French Camp</p>
+          <h2 id="account-title">Sign in</h2>
+          <p id="account-note" class="lang-note">Your chat with the book stays on this account.</p>
+        </div>
+        <button id="close-account" type="button">Close</button>
+      </div>
+      <p id="account-error" class="account-error" hidden></p>
+      <div id="account-signed-out">
+        <button id="google-sign-in" class="provider google" type="button">Continue with Google</button>
+        <p class="account-or">or use an email</p>
+        <form id="email-sign-in">
+          <input id="auth-email" type="email" autocomplete="username" placeholder="Email" required />
+          <input id="auth-password" type="password" autocomplete="current-password" placeholder="Password" minlength="6" required />
+          <div class="account-actions">
+            <button class="primary" type="submit">Sign in</button>
+            <button id="create-account" class="ghost" type="button">Create account</button>
+          </div>
+        </form>
+      </div>
+      <div id="account-signed-in" hidden>
+        <p id="account-who" class="account-who"></p>
+        <p class="account-saved">Chats are saved to this account. Sign in on another day and the book still has them.</p>
+        <button id="sign-out" class="ghost" type="button">Sign out</button>
+      </div>
+    </div>
+  </div>
+  <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore-compat.js"></script>
+  <script src="data.js"></script>
+  <script src="i18n.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="auth.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
