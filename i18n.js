@@ -8,7 +8,6 @@ window.SURCO_LANGS = [
   { id: "ml", label: "മലയാളം", latin: "Malayalam" },
   { id: "hi", label: "हिन्दी", latin: "Hindi" },
   { id: "bn", label: "বাংলা", latin: "Bengali" },
-  { id: "brx", label: "बर'", latin: "Bodo" },
   { id: "doi", label: "डोगरी", latin: "Dogri" },
   { id: "gu", label: "ગુજરાતી", latin: "Gujarati" },
   { id: "ks", label: "کٲشُر", latin: "Kashmiri" },

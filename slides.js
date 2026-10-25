@@ -11,11 +11,20 @@ function fit() {
   stage.style.transform = `translate(${x}px, ${y}px) scale(${scale})`;
 }
 
+function arrive(slide) {
+  const bits = slide.querySelectorAll("h1, h2, .lede, .title-more, .kicker, .rule, .line, .aside, .way, .way-note, .impact, .method, .giant, .beside, .facts li, .tiles figure, .foot-quiet, .end-copy a, .cameo, .bubbles p, .count-row");
+  bits.forEach((el, i) => el.style.setProperty("--n", String(Math.min(i, 8))));
+  slide.classList.remove("arrive");
+  void slide.offsetWidth;
+  slide.classList.add("arrive");
+}
+
 function show(next) {
   index = (next + slides.length) % slides.length;
   slides.forEach((slide, i) => slide.classList.toggle("show", i === index));
   bar.style.width = ((index + 1) / slides.length * 100) + "%";
   count.textContent = String(index + 1).padStart(2, "0") + "  /  " + String(slides.length).padStart(2, "0");
+  arrive(slides[index]);
 }
 
 document.getElementById("next").addEventListener("click", () => show(index + 1));

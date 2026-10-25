@@ -49,7 +49,7 @@ const LABELS = { pick: "Pick", wait: "Wait", flag: "Flag", ask: "Ask" };
 const RTL = new Set(["ar", "ur", "ks"]);
 const VOICE_LANG = {
   en: "en-US", es: "es-ES", fr: "fr-FR", ta: "ta-IN", te: "te-IN", kn: "kn-IN", ml: "ml-IN",
-  hi: "hi-IN", bn: "bn-IN", brx: "hi-IN", doi: "hi-IN", gu: "gu-IN", ks: "ur-PK", kok: "hi-IN",
+  hi: "hi-IN", bn: "bn-IN", doi: "hi-IN", gu: "gu-IN", ks: "ur-PK", kok: "hi-IN",
   mai: "hi-IN", mr: "mr-IN", ne: "ne-NP", pa: "pa-IN", sa: "hi-IN", ar: "ar-SA", ur: "ur-PK",
 };
 let voiceOn = false;
@@ -234,9 +234,8 @@ function setupLang() {
     const button = document.createElement("button");
     button.type = "button";
     button.dataset.lang = item.id;
-    button.setAttribute("role", "option");
     button.style.setProperty("--i", String(index));
-    button.classList.add(["wash-green", "wash-gold", "wash-berry", "wash-blue", "wash-plum"][index % 5]);
+    button.setAttribute("role", "option");
     const name = document.createElement("span");
     name.className = "lang-name";
     name.textContent = item.label;
@@ -274,6 +273,7 @@ function paint() {
   panel.innerHTML = "";
   if (state.screen === "verdict" && state.last) {
     renderVerdict(state.last.el, state.last.hit);
+    armMotion(panel);
     return;
   }
   if (state.tab === "home") renderHome();
@@ -281,6 +281,37 @@ function paint() {
   else if (state.tab === "check") renderCheck();
   else if (GROUPS[state.tab]) renderGroup(state.tab);
   else renderHome();
+  armMotion(panel);
+}
+
+function armMotion(root) {
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const nodes = root.querySelectorAll("h1, .lead, .orb, .more, .section, button.primary, .status, .find, .plant, .note, .finder, .tools, .samples button, .verdict .word, .verdict .meta, .pair figure, .says, .care, button.ghost, .where, .search-empty");
+  let n = 0;
+  nodes.forEach((el) => {
+    if (n > 28) return;
+    el.classList.add("enter");
+    el.style.setProperty("--n", String(n));
+    n += 1;
+  });
+}
+
+function bindNight() {
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const root = document.documentElement;
+  let frame = 0;
+  let px = 0;
+  let py = 0;
+  window.addEventListener("pointermove", (event) => {
+    px = (event.clientX / window.innerWidth - 0.5) * 28;
+    py = (event.clientY / window.innerHeight - 0.5) * 18;
+    if (frame) return;
+    frame = requestAnimationFrame(() => {
+      frame = 0;
+      root.style.setProperty("--mx", px.toFixed(1) + "px");
+      root.style.setProperty("--my", py.toFixed(1) + "px");
+    });
+  }, { passive: true });
 }
 
 function renderTabs() {
@@ -1244,6 +1275,7 @@ function setupChat() {
 async function boot() {
   setupLang();
   setupChat();
+  bindNight();
   makeBubbles();
   paint();
   try {
