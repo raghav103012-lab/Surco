@@ -9,7 +9,6 @@ const TABS = [
   { id: "garden", label: "Garden" },
   { id: "stand", label: "Stand" },
   { id: "field", label: "Field" },
-  { id: "check", label: "Check" },
 ];
 
 const GROUPS = {
@@ -278,8 +277,8 @@ function paint() {
   }
   if (state.tab === "home") renderHome();
   else if (state.tab === "search") renderSearch();
-  else if (state.tab === "check") renderCheck();
-  else renderGroup(state.tab);
+  else if (GROUPS[state.tab]) renderGroup(state.tab);
+  else renderHome();
 }
 
 function renderTabs() {
@@ -354,17 +353,10 @@ function renderHome() {
   }
   panel.appendChild(jump);
 
-  const go = document.createElement("button");
-  go.className = "primary";
-  go.id = "open-look";
-  go.type = "button";
-  go.textContent = state.ready ? t("checkPlant") : t("reading");
-  go.disabled = !state.ready;
-  go.addEventListener("click", () => openTab("check"));
   const status = document.createElement("p");
   status.className = "status";
   status.textContent = statusText();
-  panel.append(go, status);
+  panel.appendChild(status);
 }
 
 function framesFor(name) {
