@@ -4,12 +4,12 @@ const tabsEl = document.getElementById("tabs");
 
 const TABS = [
   { id: "home", label: "Home" },
+  { id: "search", label: "Search" },
   { id: "orchard", label: "Orchard" },
   { id: "garden", label: "Garden" },
   { id: "stand", label: "Stand" },
   { id: "field", label: "Field" },
   { id: "check", label: "Check" },
-  { id: "score", label: "Score" },
 ];
 
 const GROUPS = {
@@ -20,6 +20,11 @@ const GROUPS = {
 };
 
 const PREVIEW = ["Walnut", "Peach", "Apple", "Orange", "Grape", "Fig", "Cherry", "Almond", "Tomato", "Strawberry", "Eggplant", "Lettuce", "Garlic", "Beet", "Corn", "Sunflower", "Papaya", "Mango"];
+
+for (const plant of window.SURCO_MORE || []) {
+  const list = GROUPS[plant.group];
+  if (list && !list.includes(plant.crop)) list.push(plant.crop);
+}
 
 const GROUP_BLURB = {
   orchard: "Trees and vines. Shake the nuts when the hull says so. Taste citrus and stone fruit before you pick the tree.",
@@ -48,6 +53,35 @@ const VOICE_LANG = {
   mai: "hi-IN", mr: "mr-IN", ne: "ne-NP", pa: "pa-IN", sa: "hi-IN", ar: "ar-SA", ur: "ur-PK",
 };
 let voiceOn = false;
+let yemaBusy = false;
+let yemaThread = [];
+const YEMA_LANG = {
+  en: "English", es: "Spanish", fr: "French", hi: "Hindi", ta: "Tamil", te: "Telugu",
+  kn: "Kannada", ml: "Malayalam", sa: "Sanskrit", ar: "Arabic", ur: "Urdu",
+};
+const SUGGEST = {
+  en: [
+    "When do I pick a walnut?",
+    "How much water this week?",
+    "My leaves are curling",
+    "What can I plant in this heat?",
+    "Something is eating the leaves",
+    "The peaches are still hard",
+    "How do I keep tomatoes from cracking?",
+    "Is the soil too dry?",
+  ],
+  es: [
+    "¿Cuándo sacudo las nueces?",
+    "¿Cuánta agua esta semana?",
+    "Se me enrollan las hojas",
+    "¿Qué planto con este calor?",
+    "Algo se come las hojas",
+    "El durazno sigue duro",
+    "¿Cómo evito que el tomate se raje?",
+    "¿La tierra está demasiado seca?",
+  ],
+};
+let suggestAt = 0;
 let hearing = false;
 let recognition = null;
 let submitLine = function () {};
@@ -72,6 +106,27 @@ function statusText() {
 function cropName(name) {
   const pack = window.SURCO_I18N && window.SURCO_I18N[state.lang];
   return (pack && pack.crops && pack.crops[name]) || name;
+}
+
+function plantLine(name) {
+  const extra = (window.SURCO_MORE || []).find((item) => item.crop === name);
+  if (!extra) return "";
+  return state.lang === "es" ? extra.es : extra.en;
+}
+
+function waterLine(name) {
+  const row = window.SURCO_WATER && window.SURCO_WATER[name];
+  if (!row) return "";
+  return state.lang === "es" ? row.es : row.en;
+}
+
+function addWater(parent, name) {
+  const text = waterLine(name);
+  if (!text || !parent) return;
+  const line = document.createElement("p");
+  line.className = "water";
+  line.textContent = text;
+  parent.appendChild(line);
 }
 
 function note(photo) {
@@ -113,6 +168,24 @@ function applyChrome() {
   const log = document.getElementById("chat-log");
   if (log && log.childElementCount === 1 && log.firstChild.classList.contains("bot")) {
     log.firstChild.textContent = t("chatHello");
+  }
+  paintSuggestions();
+}
+
+function paintSuggestions() {
+  const host = document.getElementById("chat-suggests");
+  if (!host) return;
+  const list = SUGGEST[state.lang] || SUGGEST.en;
+  host.replaceChildren();
+  for (let i = 0; i < 3; i++) {
+    const text = list[(suggestAt + i) % list.length];
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "suggest";
+    button.style.animationDelay = (-i * 1.6) + "s";
+    button.textContent = text;
+    button.addEventListener("click", () => submitLine(text));
+    host.appendChild(button);
   }
 }
 
@@ -204,8 +277,8 @@ function paint() {
     return;
   }
   if (state.tab === "home") renderHome();
+  else if (state.tab === "search") renderSearch();
   else if (state.tab === "check") renderCheck();
-  else if (state.tab === "score") renderScore();
   else renderGroup(state.tab);
 }
 
@@ -298,6 +371,65 @@ function framesFor(name) {
   return data.book.filter((photo) => photo.crop === name);
 }
 
+function buildPlant(name) {
+  const photos = framesFor(name);
+  const article = document.createElement("article");
+  article.className = "plant";
+  article.id = "plant-" + name;
+  const heading = document.createElement("h2");
+  heading.textContent = cropName(name);
+  article.appendChild(heading);
+  if (!photos.length) {
+    const extra = window.SURCO_PHOTO && window.SURCO_PHOTO[name];
+    const card = document.createElement("div");
+    card.className = "frame";
+    const copy = document.createElement("div");
+    const line = document.createElement("p");
+    line.className = "call";
+    line.textContent = plantLine(name);
+    copy.appendChild(line);
+    addWater(copy, name);
+    if (extra && extra.src) {
+      const img = document.createElement("img");
+      img.alt = "";
+      img.loading = "lazy";
+      img.src = extra.src;
+      const credit = document.createElement("a");
+      credit.className = "credit";
+      credit.href = extra.href;
+      credit.target = "_blank";
+      credit.rel = "noopener noreferrer";
+      const who = String(extra.by || "Wikimedia Commons").replace(/\s+/g, " ").trim();
+      const license = extra.license && extra.license !== "Wikimedia Commons" ? ", " + extra.license : "";
+      credit.textContent = "Photo: " + who.slice(0, 72) + license;
+      copy.appendChild(credit);
+      card.append(img, copy);
+    } else {
+      card.appendChild(copy);
+    }
+    article.appendChild(card);
+    return article;
+  }
+  for (const photo of photos) {
+    const frame = document.createElement("div");
+    frame.className = "frame";
+    const text = note(photo);
+    const where = photo.row ? t("row", { n: photo.row }) : "";
+    frame.innerHTML = `
+      <img alt="" src="${photo.src}" />
+      <div>
+        <p class="tag ${photo.label}">${labelWord(photo.label)}${where}</p>
+        <p class="call"></p>
+        <p class="care"></p>
+      </div>`;
+    frame.querySelector(".call").textContent = text.call;
+    frame.querySelector(".care").textContent = text.care;
+    article.appendChild(frame);
+  }
+  addWater(article, name);
+  return article;
+}
+
 function renderGroup(id) {
   const title = document.createElement("h1");
   title.textContent = t(id);
@@ -306,29 +438,67 @@ function renderGroup(id) {
   blurb.textContent = t("blurb_" + id);
   panel.append(title, blurb);
 
-  for (const name of GROUPS[id]) {
-    const article = document.createElement("article");
-    article.className = "plant";
-    article.id = "plant-" + name;
-    const heading = document.createElement("h2");
-    heading.textContent = cropName(name);
-    article.appendChild(heading);
-    for (const photo of framesFor(name)) {
-      const frame = document.createElement("div");
-      frame.className = "frame";
-      const text = note(photo);
-      const where = photo.row ? t("row", { n: photo.row }) : "";
-      frame.innerHTML = `
-        <img alt="" src="${photo.src}" />
-        <div>
-          <p class="tag ${photo.label}">${labelWord(photo.label)}${where}</p>
-          <p class="call"></p>
-          <p class="care"></p>
-        </div>`;
-      frame.querySelector(".call").textContent = text.call;
-      frame.querySelector(".care").textContent = text.care;
-      article.appendChild(frame);
+  const find = document.createElement("input");
+  find.className = "find";
+  find.type = "search";
+  find.placeholder = t("findPlant");
+  find.setAttribute("aria-label", t("findPlant"));
+  find.addEventListener("input", () => {
+    const q = plain(find.value);
+    for (const article of panel.querySelectorAll(".plant")) {
+      article.hidden = Boolean(q) && !plain(article.textContent).includes(q);
     }
+  });
+  panel.appendChild(find);
+
+  for (const name of GROUPS[id]) panel.appendChild(buildPlant(name));
+}
+
+function allPlants() {
+  const rows = [];
+  for (const group of ["orchard", "garden", "stand", "field"]) {
+    for (const name of GROUPS[group]) rows.push({ name, group });
+  }
+  return rows;
+}
+
+function renderSearch() {
+  const rows = allPlants();
+  const title = document.createElement("h1");
+  title.textContent = t("search");
+  const blurb = document.createElement("p");
+  blurb.className = "lead";
+  blurb.textContent = t("blurb_search", { n: rows.length });
+  panel.append(title, blurb);
+
+  const find = document.createElement("input");
+  find.className = "find";
+  find.type = "search";
+  find.placeholder = t("findPlant");
+  find.setAttribute("aria-label", t("findPlant"));
+  const empty = document.createElement("p");
+  empty.className = "lead search-empty";
+  empty.hidden = true;
+  empty.textContent = t("searchEmpty");
+  find.addEventListener("input", () => {
+    const q = plain(find.value);
+    let shown = 0;
+    for (const article of panel.querySelectorAll(".plant")) {
+      const hit = !q || plain(article.dataset.find || "").includes(q);
+      article.hidden = !hit;
+      if (hit) shown += 1;
+    }
+    empty.hidden = shown !== 0;
+  });
+  panel.append(find, empty);
+
+  for (const row of rows) {
+    const article = buildPlant(row.name);
+    const where = document.createElement("p");
+    where.className = "where";
+    where.textContent = t(row.group);
+    article.querySelector("h2").after(where);
+    article.dataset.find = [row.name, cropName(row.name), row.group, t(row.group), article.textContent].join(" ");
     panel.appendChild(article);
   }
 }
@@ -454,74 +624,6 @@ function renderVerdict(nowEl, hit) {
   wrap.appendChild(back);
   panel.appendChild(wrap);
   burst();
-}
-
-function renderScore() {
-  if (!state.ready) {
-    const waiting = document.createElement("h1");
-    waiting.textContent = t("score");
-    const note = document.createElement("p");
-    note.className = "note";
-    note.textContent = t("reading");
-    panel.append(waiting, note);
-    return;
-  }
-  const queries = data.heldout;
-  let matched = 0;
-  let asked = 0;
-  let held = 0;
-  let wrong = 0;
-  for (const query of queries) {
-    const kind = outcome(query);
-    if (kind === "Match") matched += 1;
-    else if (kind === "Asked") asked += 1;
-    else if (kind === "Held back") held += 1;
-    else wrong += 1;
-  }
-  const head = document.createElement("div");
-  const scoreTitle = document.createElement("h1");
-  scoreTitle.textContent = t("score");
-  const stats = document.createElement("div");
-  stats.className = "stats";
-  for (const [value, key] of [[matched, "matched"], [asked, "asked"], [held, "held"], [wrong, "wrong"]]) {
-    const stat = document.createElement("div");
-    stat.className = "stat";
-    const strong = document.createElement("b");
-    strong.textContent = value;
-    const span = document.createElement("span");
-    span.textContent = t(key);
-    stat.append(strong, span);
-    stats.appendChild(stat);
-  }
-  const scoreNote = document.createElement("p");
-  scoreNote.className = "note";
-  scoreNote.textContent = t("scoreNote");
-  head.append(scoreTitle, stats, scoreNote);
-  panel.appendChild(head);
-
-  for (const query of queries) {
-    const kind = outcome(query);
-    const row = document.createElement("div");
-    row.className = "score-row";
-    const near = query.nearest;
-    const want = query.expect === "ask" ? labelWord("ask") : `${cropName(query.expectCrop)} ${labelWord(query.expect)}`;
-    const got = near ? `${cropName(near.crop)} ${labelWord(near.label)} ${query.similarity.toFixed(2)}` : t("noNeighbor");
-    const img = document.createElement("img");
-    img.alt = "";
-    img.src = query.src;
-    const copy = document.createElement("p");
-    copy.textContent = t("scoreRow", { note: query.note, got, want });
-    const badge = document.createElement("span");
-    badge.className = "badge";
-    badge.textContent = t({ Match: "matched", Asked: "asked", "Held back": "held", Wrong: "wrong" }[kind] || "wrong");
-    row.append(img, copy, badge);
-    panel.appendChild(row);
-  }
-
-  const method = document.createElement("p");
-  method.className = "method";
-  method.textContent = t("method");
-  panel.appendChild(method);
 }
 
 function cosine(a, b) {
@@ -885,6 +987,58 @@ function answer(text) {
   return crops.slice(0, 2).map((crop) => speakCrop(crop)).join("\n\n");
 }
 
+function localAnswer(text) {
+  const hint = bookHint(text);
+  if (hint) return hint;
+  const q = plain(text);
+  if (/\b(hello|hi|hey|hola|bonjour|namaste|namaskar|vanakkam|nomoshkar|salaam)\b/.test(q)) return t("chatHi");
+  if (/water|rieg|irrig|gallon|galon|sequ|hose|manguer/.test(q)) return t("yemaWater");
+  if (/heat|calor|hot|sol|sombra|shade|curl|enroll/.test(q)) return t("yemaHeat");
+  if (/bug|pest|aphid|insect|plaga|bicho|oruga|worm|ant|pulgon/.test(q)) return t("yemaBug");
+  if (/soil|tierra|compost|mulch|cobert|arcilla/.test(q)) return t("yemaSoil");
+  if (/plant|sembr|siembr|transplant|frost|helada/.test(q)) return t("yemaPlant");
+  return t("chatMiss");
+}
+
+function bookHint(text) {
+  const names = Object.values(GROUPS).flat().slice().sort((a, b) => plain(b).length - plain(a).length);
+  let rest = plain(text);
+  const hit = [];
+  for (const name of names) {
+    const n = plain(name).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const re = new RegExp("(^|[^a-z])" + n + "(?=[^a-z]|$)");
+    if (!re.test(rest)) continue;
+    hit.push(name);
+    rest = rest.replace(re, " ");
+    if (hit.length === 3) break;
+  }
+  return hit.map((name) => {
+    const stored = framesFor(name).length ? speakCrop(name) : plantLine(name);
+    if (!stored) return "";
+    const water = waterLine(name);
+    return name + ": " + stored + (water ? " " + water : "");
+  }).filter(Boolean).join("\n\n");
+}
+
+async function askYema(text) {
+  const response = await fetch("/api/yema", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      text,
+      lang: state.lang,
+      hint: bookHint(text).slice(0, 1400),
+      history: yemaThread.slice(-8),
+    }),
+    signal: AbortSignal.timeout(50000),
+  });
+  if (!response.ok) throw new Error("yema");
+  const payload = await response.json();
+  const clean = String((payload && payload.reply) || "").replace(/\s*\n+\s*/g, " ").trim();
+  if (!clean) throw new Error("empty");
+  return clean;
+}
+
 function stopTalking() {
   if (window.speechSynthesis) window.speechSynthesis.cancel();
   const box = document.getElementById("chat");
@@ -975,11 +1129,12 @@ function setupChat() {
   const say = (role, text, persist) => {
     const line = document.createElement("p");
     line.className = role;
+    if (persist === "quiet") line.classList.add("waiting");
     line.textContent = text;
     log.appendChild(line);
     log.scrollTop = log.scrollHeight;
-    if (role === "bot") speakAloud(text);
-    if (persist !== false && window.surcoSaveLine) window.surcoSaveLine(role, text);
+    if (role === "bot" && persist !== "quiet") speakAloud(text);
+    if (persist !== false && persist !== "quiet" && window.surcoSaveLine) window.surcoSaveLine(role, text);
     return line;
   };
   window.surcoChat = {
@@ -987,12 +1142,29 @@ function setupChat() {
     add(role, text) { say(role, text, false); },
     count() { return log.childElementCount; },
   };
-  submitLine = (text) => {
+  submitLine = async (text) => {
     const clean = text.trim();
-    if (!clean) return;
+    if (!clean || yemaBusy) return;
+    yemaBusy = true;
     input.value = "";
     say("me", clean);
-    say("bot", answer(clean));
+    const pending = say("bot", t("chatWait"), "quiet");
+    let reply = "";
+    try {
+      reply = await askYema(clean);
+      yemaThread.push({ role: "user", content: clean }, { role: "assistant", content: reply });
+      if (yemaThread.length > 12) yemaThread = yemaThread.slice(-12);
+    } catch (error) {
+      reply = localAnswer(clean);
+    }
+    suggestAt += 1;
+    paintSuggestions();
+    pending.classList.remove("waiting");
+    pending.textContent = reply;
+    log.scrollTop = log.scrollHeight;
+    speakAloud(reply);
+    if (window.surcoSaveLine) window.surcoSaveLine("bot", reply);
+    yemaBusy = false;
   };
   document.getElementById("open-chat").addEventListener("click", () => {
     box.hidden = false;
@@ -1062,7 +1234,7 @@ async function boot() {
     state.status = wrong === 0
       ? { key: "statusOk", vars: { n } }
       : { key: "statusBad", vars: { wrong, n } };
-    if (state.screen === "tab" && (state.tab === "home" || state.tab === "score")) paint();
+    if (state.screen === "tab" && state.tab === "home") paint();
   } catch (err) {
     state.status = { key: "statusFail" };
     if (state.tab === "home") paint();

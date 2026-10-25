@@ -280,6 +280,58 @@ button.primary:disabled { opacity: 0.45; cursor: wait; }
 
 .plant { margin-top: 28px; }
 .plant h2 { margin: 0 0 12px; font-size: 36px; }
+.where {
+  margin: -8px 0 12px;
+  color: var(--muted);
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.search-empty { margin-top: 18px; }
+.plant.plain { margin-top: 10px; }
+.plant.plain h2 { font-size: 22px; margin-bottom: 6px; }
+.plant.plain p { margin: 0; color: var(--muted); }
+.plant.plain.has-photo {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  gap: 16px;
+  align-items: center;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 12px;
+}
+.plant.plain.has-photo img {
+  width: 100%;
+  aspect-ratio: 1;
+  height: auto;
+  object-fit: cover;
+  object-position: center;
+  border-radius: 14px;
+  display: block;
+  background: #101412;
+}
+.water { margin: 8px 0 0; color: var(--ink); }
+.plant.plain p.water { color: var(--ink); }
+.plant.plain.has-photo h2 { margin: 0 0 4px; }
+.plant.plain .credit {
+  display: block;
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 11px;
+  text-decoration: none;
+}
+.find {
+  width: 100%;
+  margin: 4px 0 8px;
+  background: var(--card);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 12px 16px;
+  font: inherit;
+}
+.chat-log .bot.waiting { color: var(--muted); }
 
 .frame {
   display: grid;
@@ -293,7 +345,7 @@ button.primary:disabled { opacity: 0.45; cursor: wait; }
   margin-bottom: 12px;
 }
 
-.frame img, .pair img, .score-row img, .samples img {
+.frame img, .pair img, .samples img {
   width: 100%;
   aspect-ratio: 1;
   object-fit: cover;
@@ -369,23 +421,6 @@ button.primary:disabled { opacity: 0.45; cursor: wait; }
 .pair figure { margin: 0; }
 .verdict .ghost { margin-top: 22px; }
 
-.stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 18px 0; }
-.stat {
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  padding: 14px;
-}
-.stat b { display: block; font-family: "Iowan Old Style", Palatino, serif; font-size: 42px; font-weight: 500; }
-.score-row {
-  display: grid;
-  grid-template-columns: 72px 1fr auto;
-  gap: 12px;
-  align-items: center;
-  margin-bottom: 10px;
-}
-.badge { color: var(--pick); font-weight: 650; }
-
 .chat {
   position: fixed;
   z-index: 8;
@@ -420,6 +455,35 @@ button.primary:disabled { opacity: 0.45; cursor: wait; }
   border-radius: 999px;
   padding: 8px 12px;
   cursor: pointer;
+}
+.suggests {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-start;
+  padding: 4px 14px 8px;
+}
+.suggest {
+  border: 1px solid rgba(227, 139, 79, 0.38);
+  background: rgba(227, 139, 79, 0.1);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.3;
+  border-radius: 999px;
+  padding: 8px 14px;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18), inset 0 0 18px rgba(247, 241, 230, 0.06);
+  animation: suggest-float 6.5s ease-in-out infinite;
+}
+.suggest:hover {
+  background: rgba(227, 139, 79, 0.2);
+  border-color: rgba(227, 139, 79, 0.7);
+}
+@keyframes suggest-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
 }
 #chat-form { border-top: 1px solid var(--line); }
 #chat-input {
@@ -625,19 +689,19 @@ html[lang="ur"] body { font-family: "Noto Nastaliq Urdu", "Geeza Pro", "Avenir N
 @media (max-width: 980px) {
   .hero { grid-template-columns: 1fr; }
   .orbs, .samples { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .jump, .stats { grid-template-columns: 1fr 1fr; }
+  .jump { grid-template-columns: 1fr 1fr; }
   .lang-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .mast-row { align-items: flex-start; flex-direction: column; }
 }
 
 @media (max-width: 640px) {
-  .frame { grid-template-columns: 104px 1fr; }
-  .pair, .stats, .jump { grid-template-columns: 1fr; }
+  .frame, .plant.plain.has-photo { grid-template-columns: 104px 1fr; }
+  .pair, .jump { grid-template-columns: 1fr; }
   .chat { top: auto; height: 70vh; }
   .lang-name { font-size: 20px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .bubble, .orb img, .lang-float span, .voice-ring, .voice-core, .shutter { animation: none; }
+  .bubble, .orb img, .lang-float span, .voice-ring, .voice-core, .shutter, .suggest { animation: none; }
   #bubbles { display: none; }
 }

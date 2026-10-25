@@ -1,6 +1,7 @@
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
+const { yemaReply } = require("./yema-server");
 
 const root = __dirname;
 const types = {
@@ -16,6 +17,25 @@ const types = {
 
 const server = http.createServer((req, res) => {
   const url = decodeURIComponent(req.url.split("?")[0]);
+  if (req.method === "POST" && url === "/api/yema") {
+    const chunks = [];
+    req.on("data", (chunk) => {
+      chunks.push(chunk);
+      if (Buffer.concat(chunks).length > 200000) req.destroy();
+    });
+    req.on("end", () => {
+      let body = {};
+      try { body = JSON.parse(Buffer.concat(chunks).toString("utf8") || "{}"); } catch (error) { body = {}; }
+      yemaReply(body).then((reply) => {
+        res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-cache" });
+        res.end(JSON.stringify({ reply }));
+      }).catch(() => {
+        res.writeHead(502, { "Content-Type": "application/json; charset=utf-8" });
+        res.end(JSON.stringify({ error: "yema" }));
+      });
+    });
+    return;
+  }
   const rel = url === "/" ? "/index.html" : url;
   const file = path.normalize(path.join(root, rel));
   if (!file.startsWith(root)) {
