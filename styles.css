@@ -332,6 +332,21 @@ button.primary:disabled { opacity: 0.45; cursor: wait; }
   font: inherit;
 }
 .chat-log .bot.waiting { color: var(--muted); }
+.think { display: inline-flex; gap: 6px; align-items: center; height: 1.1em; }
+.think i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(227, 139, 79, 0.9);
+  box-shadow: 0 0 12px rgba(227, 139, 79, 0.55);
+  animation: think 1.2s ease-in-out infinite;
+}
+.think i:nth-child(2) { animation-delay: 0.16s; }
+.think i:nth-child(3) { animation-delay: 0.32s; }
+@keyframes think {
+  0%, 100% { opacity: 0.28; transform: translateY(0); }
+  50% { opacity: 1; transform: translateY(-3px); }
+}
 
 .frame {
   display: grid;
@@ -702,6 +717,6 @@ html[lang="ur"] body { font-family: "Noto Nastaliq Urdu", "Geeza Pro", "Avenir N
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .bubble, .orb img, .lang-float span, .voice-ring, .voice-core, .shutter, .suggest { animation: none; }
+  .bubble, .orb img, .lang-float span, .voice-ring, .voice-core, .shutter, .suggest, .think i { animation: none; }
   #bubbles { display: none; }
 }

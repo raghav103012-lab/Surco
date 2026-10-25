@@ -1,7 +1,7 @@
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
-const { yemaReply } = require("./yema-server");
+const { yemaStream } = require("./yema-server");
 
 const root = __dirname;
 const types = {
@@ -26,12 +26,27 @@ const server = http.createServer((req, res) => {
     req.on("end", () => {
       let body = {};
       try { body = JSON.parse(Buffer.concat(chunks).toString("utf8") || "{}"); } catch (error) { body = {}; }
-      yemaReply(body).then((reply) => {
-        res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-cache" });
-        res.end(JSON.stringify({ reply }));
+      let started = false;
+      const head = () => {
+        if (started) return;
+        started = true;
+        res.writeHead(200, {
+          "Content-Type": "application/x-ndjson; charset=utf-8",
+          "Cache-Control": "no-cache",
+          "X-Accel-Buffering": "no",
+        });
+      };
+      yemaStream(body, (piece) => {
+        head();
+        res.write(JSON.stringify({ t: piece }) + "\n");
+      }).then((reply) => {
+        head();
+        res.end(JSON.stringify({ done: true, reply }) + "\n");
       }).catch(() => {
-        res.writeHead(502, { "Content-Type": "application/json; charset=utf-8" });
-        res.end(JSON.stringify({ error: "yema" }));
+        if (!started) {
+          res.writeHead(502, { "Content-Type": "application/x-ndjson; charset=utf-8" });
+        }
+        res.end(JSON.stringify({ error: "yema" }) + "\n");
       });
     });
     return;

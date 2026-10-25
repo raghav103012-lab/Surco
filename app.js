@@ -1012,7 +1012,7 @@ function bookHint(text) {
   }).filter(Boolean).join("\n\n");
 }
 
-async function askYema(text) {
+async function askYema(text, onText) {
   const response = await fetch("/api/yema", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -1024,11 +1024,42 @@ async function askYema(text) {
     }),
     signal: AbortSignal.timeout(50000),
   });
-  if (!response.ok) throw new Error("yema");
-  const payload = await response.json();
-  const clean = String((payload && payload.reply) || "").replace(/\s*\n+\s*/g, " ").trim();
-  if (!clean) throw new Error("empty");
-  return clean;
+  if (!response.ok || !response.body) throw new Error("yema");
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buf = "";
+  let reply = "";
+  while (true) {
+    const step = await reader.read();
+    if (step.done) break;
+    buf += decoder.decode(step.value, { stream: true });
+    const lines = buf.split("\n");
+    buf = lines.pop();
+    for (const line of lines) {
+      if (!line.trim()) continue;
+      let msg = null;
+      try { msg = JSON.parse(line); } catch (error) { continue; }
+      if (msg.error) throw new Error("yema");
+      if (msg.t) {
+        reply += msg.t;
+        if (onText) onText(reply.replace(/\s+/g, " ").trim());
+      } else if (msg.reply && !reply) {
+        reply = msg.reply;
+        if (onText) onText(reply);
+      }
+    }
+  }
+  reply = reply.replace(/\s+/g, " ").trim();
+  if (!reply) throw new Error("empty");
+  return reply;
+}
+
+function thinkingMark() {
+  const mark = document.createElement("span");
+  mark.className = "think";
+  mark.setAttribute("aria-hidden", "true");
+  for (let i = 0; i < 3; i++) mark.appendChild(document.createElement("i"));
+  return mark;
 }
 
 function stopTalking() {
@@ -1140,10 +1171,17 @@ function setupChat() {
     yemaBusy = true;
     input.value = "";
     say("me", clean);
-    const pending = say("bot", t("chatWait"), "quiet");
+    const pending = say("bot", "", "quiet");
+    pending.setAttribute("aria-label", t("chatWait"));
+    pending.appendChild(thinkingMark());
     let reply = "";
     try {
-      reply = await askYema(clean);
+      reply = await askYema(clean, (soFar) => {
+        pending.classList.remove("waiting");
+        pending.removeAttribute("aria-label");
+        pending.textContent = soFar;
+        log.scrollTop = log.scrollHeight;
+      });
       yemaThread.push({ role: "user", content: clean }, { role: "assistant", content: reply });
       if (yemaThread.length > 12) yemaThread = yemaThread.slice(-12);
     } catch (error) {
